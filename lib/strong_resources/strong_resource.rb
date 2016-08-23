@@ -87,40 +87,49 @@ module StrongResources
     end
 
     def permits(controller)
-      {}.tap do |permits|
-        self.attributes.each_pair do |name, opts|
-          if opts[:if] and opts[:if].call(controller) == false
-            next
-          end
-
-          permits.merge!(name => StrongResources.type_for_param(opts[:type]))
-        end
-
+      base_permits(self, controller).tap do |permits|
         self.relations.each_pair do |relation_name, opts|
           related_resource = opts[:resource]
-          attributes = related_resource.permits(controller)
+          related = related_permits(related_resource, controller)
 
-          attributes.merge!(id: StrongResources.type_for_param(:id))
-
-          attributes = attributes.slice(*related_resource.only) if related_resource.only
-          attributes = attributes.except(*related_resource.except) if related_resource.except
-
-          if controller.update_action?
-            if related_resource.delete?
-              attributes.merge!(_delete: StrongResources.type_for_param(:boolean))
-            end
-
-            if related_resource.destroy?
-              attributes.merge!(_destroy: StrongResources.type_for_param(:boolean))
-            end
-          end
-
-          permits.merge!(:"#{relation_name}_attributes" => attributes)
+          permits.merge!(:"#{relation_name}_attributes" => related)
         end
       end
     end
 
     private
+
+    def base_permits(resource, controller)
+      permits = {}
+      resource.attributes.each_pair do |name, opts|
+        next if (opts[:if] and opts[:if].call(controller) == false)
+        permits.merge!(name => StrongResources.type_for_param(opts[:type]))
+      end
+
+      permits = permits.slice(*resource.only) if resource.only
+      permits = permits.except(*resource.except) if resource.except
+      permits
+    end
+
+    def related_permits(related_resource, controller)
+      related_resource.permits(controller).tap do |permits|
+        permits.merge!(id: StrongResources.type_for_param(:id))
+
+        if controller.update_action?
+          merge_delete_destroy(related_resource, permits)
+        end
+      end
+    end
+
+    def merge_delete_destroy(related_resource, permits)
+      if related_resource.delete?
+        permits.merge!(_delete: StrongResources.type_for_param(:boolean))
+      end
+
+      if related_resource.destroy?
+        permits.merge!(_destroy: StrongResources.type_for_param(:boolean))
+      end
+    end
 
     def add_relation(name, resource, only, except, delete, destroy)
       resource.only = only
