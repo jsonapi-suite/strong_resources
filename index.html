@@ -1,0 +1,175 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Strong resources by jsonapi-suite</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Strong resources</h1>
+        <p></p>
+
+        <p class="view"><a href="https://github.com/jsonapi-suite/strong_resources">View the Project on GitHub <small>jsonapi-suite/strong_resources</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/jsonapi-suite/strong_resources/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/jsonapi-suite/strong_resources/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/jsonapi-suite/strong_resources">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h3>
+<a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Getting Started</h3>
+
+<p>Add the mixin:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">class</span> <span class="pl-en">ApplicationController<span class="pl-e"> &lt; ActionController::Base</span></span>
+  <span class="pl-k">include</span> <span class="pl-c1">StrongResources</span>::<span class="pl-c1">Controller</span>::<span class="pl-c1">Mixin</span>
+<span class="pl-k">end</span></pre></div>
+
+<p>Define your resources:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-c"># config/initializers/strong_resources.rb</span>
+<span class="pl-c1">StrongResources</span>.configure <span class="pl-k">do</span>
+  strong_resource <span class="pl-c1">:person</span> <span class="pl-k">do</span>
+    attribute <span class="pl-c1">:name</span>, <span class="pl-c1">:string</span>
+    attribute <span class="pl-c1">:age</span>, <span class="pl-c1">:integer</span>
+  <span class="pl-k">end</span>
+
+  strong_resource <span class="pl-c1">:pet</span> <span class="pl-k">do</span>
+    attribute <span class="pl-c1">:name</span>, <span class="pl-c1">:string</span>
+    attribute <span class="pl-c1">:type</span>, <span class="pl-c1">:string</span>
+  <span class="pl-k">end</span>
+<span class="pl-k">end</span></pre></div>
+
+<p>These resources can now be references from your controller:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">class</span> <span class="pl-en">PeopleController<span class="pl-e"> &lt; ApplicationController</span></span>
+  strong_resource <span class="pl-c1">:person</span> <span class="pl-k">do</span>
+    has_many <span class="pl-c1">:pets</span>, <span class="pl-c1">delete:</span> <span class="pl-c1">true</span>, <span class="pl-c1">destroy:</span> <span class="pl-c1">true</span>
+  <span class="pl-k">end</span>
+
+  <span class="pl-k">def</span> <span class="pl-en">create</span>
+    person <span class="pl-k">=</span> <span class="pl-c1">Person</span>.<span class="pl-k">new</span>(strong_resource)
+    <span class="pl-c"># code</span>
+  <span class="pl-k">end</span>
+<span class="pl-k">end</span></pre></div>
+
+<p>We've now enabled</p>
+
+<ul>
+<li>Strong params with type checking</li>
+<li>Support for nested associations</li>
+<li>Support for <code>_delete</code> and <code>_destroy</code> on <code>update</code> action</li>
+</ul>
+
+<p>Most importantly, this data can now be introspected for things like automatic documentation.</p>
+
+<h3>
+<a id="customizing-per-action" class="anchor" href="#customizing-per-action" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Customizing per-action</h3>
+
+<p>Let's say a person's name can be created, but never changed:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">class</span> <span class="pl-en">PeopleController<span class="pl-e"> &lt; ApplicationController</span></span>
+  strong_resource <span class="pl-c1">:person</span> <span class="pl-k">do</span>
+    on <span class="pl-c1">:update</span> <span class="pl-k">do</span>
+      remove_attribute <span class="pl-c1">:name</span>
+    <span class="pl-k">end</span>
+  <span class="pl-k">end</span>
+<span class="pl-k">end</span></pre></div>
+
+<h3>
+<a id="limit-attribute-set" class="anchor" href="#limit-attribute-set" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Limit attribute set</h3>
+
+<p>You can use <code>only</code> and <code>except</code> to limit the accepted payloads:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">class</span> <span class="pl-en">PeopleController<span class="pl-e"> &lt; ApplicationController</span></span>
+  strong_resource <span class="pl-c1">:person</span> <span class="pl-k">do</span>
+    has_many <span class="pl-c1">:pets</span>, <span class="pl-c1">only:</span> [<span class="pl-c1">:type</span>]
+  <span class="pl-k">end</span>
+<span class="pl-k">end</span></pre></div>
+
+<p>No error will be raised when excess parameters are supplied; they are silently dropped.</p>
+
+<h3>
+<a id="deletedestroy" class="anchor" href="#deletedestroy" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Delete/Destroy</h3>
+
+<p>We follow the pattern where the <code>_delete</code> parameter is for disassociation, the <code>_destroy</code> parameter is for deleting the associated resource as well as disassociating. Use <code>delete</code> and <code>destroy</code>:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">class</span> <span class="pl-en">PeopleController<span class="pl-e"> &lt; ApplicationController</span></span>
+  strong_resource <span class="pl-c1">:person</span> <span class="pl-k">do</span>
+    has_many <span class="pl-c1">:pets</span>, <span class="pl-c1">delete:</span> <span class="pl-c1">true</span>, <span class="pl-c1">destroy:</span> <span class="pl-c1">false</span>
+  <span class="pl-k">end</span>
+<span class="pl-k">end</span></pre></div>
+
+<p>These will only be available on the <code>update</code> action. To customize, define your own <code>update_action?</code>:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">def</span> <span class="pl-en">update_action?</span>
+  <span class="pl-s"><span class="pl-pds">%w(</span>promote update<span class="pl-pds">)</span></span>.include?(action_name)
+<span class="pl-k">end</span></pre></div>
+
+<h3>
+<a id="relationships" class="anchor" href="#relationships" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Relationships</h3>
+
+<p>Relationships can be nested to any level:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">class</span> <span class="pl-en">PeopleController<span class="pl-e"> &lt; ApplicationController</span></span>
+  strong_resource <span class="pl-c1">:person</span> <span class="pl-k">do</span>
+    has_many <span class="pl-c1">:pets</span> <span class="pl-k">do</span>
+      belongs_to <span class="pl-c1">:animal_family</span>
+    <span class="pl-k">end</span>
+  <span class="pl-k">end</span>
+<span class="pl-k">end</span></pre></div>
+
+<p>If a relationship name does not match the strong resource name, use <code>resource</code>:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">class</span> <span class="pl-en">PeopleController<span class="pl-e"> &lt; ApplicationController</span></span>
+  strong_resource <span class="pl-c1">:person</span> <span class="pl-k">do</span>
+    has_many <span class="pl-c1">:pets</span>, <span class="pl-c1">resource:</span> <span class="pl-c1">:animal</span>
+  <span class="pl-k">end</span>
+<span class="pl-k">end</span></pre></div>
+
+<h3>
+<a id="conditional-attributes" class="anchor" href="#conditional-attributes" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Conditional Attributes</h3>
+
+<p>Let's say only admins can change a person's age:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-c"># config/initializers/strong_resources.rb</span>
+strong_resource <span class="pl-c1">:person</span> <span class="pl-k">do</span>
+  attribute <span class="pl-c1">:age</span>, <span class="pl-c1">:integer</span>, <span class="pl-c1">if:</span> <span class="pl-k">-</span><span class="pl-k">&gt;</span>(controller) { controller.current_user.admin? }
+<span class="pl-k">end</span></pre></div>
+
+<h3>
+<a id="custom-types" class="anchor" href="#custom-types" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Custom Types</h3>
+
+<p>Define a custom type by giving its internal name, stronger_parameters type, and swagger type:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-c"># config/initializers/strong_resources.rb</span>
+<span class="pl-c1">Parameters</span> <span class="pl-k">=</span> <span class="pl-c1">ActionController</span>::<span class="pl-c1">Parameters</span>
+strong_param <span class="pl-c1">:pet_type</span>, <span class="pl-c1">swagger:</span> <span class="pl-c1">:string</span>, <span class="pl-c1">type:</span> <span class="pl-c1">Parameters</span>.enum(<span class="pl-s"><span class="pl-pds">'</span>Dog<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>Cat<span class="pl-pds">'</span></span>)
+
+strong_resource <span class="pl-c1">:pet</span> <span class="pl-k">do</span>
+  attribute <span class="pl-c1">:type</span>, <span class="pl-c1">:pet_type</span>
+<span class="pl-k">end</span></pre></div>
+
+<p>This will adhere to <code>ActionController::Parameters.action_on_invalid_parameters</code> defined by stronger_parameters.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/jsonapi-suite">jsonapi-suite</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
