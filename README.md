@@ -1,5 +1,7 @@
 # StrongResources
 
+[![Build Status](https://travis-ci.org/jsonapi-suite/strong_resources.svg?branch=master)](https://travis-ci.org/jsonapi-suite/strong_resources)
+
 View [official documentation](https://jsonapi-suite.github.io/strong_resources)
 
 Supported Rails versions: >= 4.1
