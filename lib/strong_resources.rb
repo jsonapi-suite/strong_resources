@@ -1,3 +1,4 @@
+require 'action_controller'
 require 'stronger_parameters'
 
 require "strong_resources/version"
