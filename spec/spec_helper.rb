@@ -51,6 +51,10 @@ StrongResources.configure do
     attribute :revenue, :integer
   end
 
+  strong_resource :parent_company do
+    attribute :title, :string
+  end
+
   strong_resource :unicorn do
     attribute :title, :string
   end
@@ -79,5 +83,19 @@ end
 
 class CompaniesController < ActionController::Base
   include StrongResources::Controller::Mixin
+
+  strong_resource :company do
+    belongs_to :state
+    belongs_to :parent_company
+  end
+
+  strong_resource :parent_company do
+    belongs_to :state
+  end
+
   strong_resource :unicorn
+
+  def create
+    render json: strong_resource
+  end
 end
