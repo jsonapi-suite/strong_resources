@@ -23,6 +23,7 @@ module StrongResources
 
       module ClassMethods
         def strong_resource(name, opts = {}, &blk)
+          blk ||= Proc.new {}
           opts[:require] ||= name unless opts[:require] == false
           resource = StrongResource.from(name, opts, &blk)
 

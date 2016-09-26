@@ -51,6 +51,10 @@ StrongResources.configure do
     attribute :revenue, :integer
   end
 
+  strong_resource :unicorn do
+    attribute :title, :string
+  end
+
   strong_resource :state do
     attribute :acronym, :string
   end
@@ -71,4 +75,9 @@ class PeopleController < ActionController::Base
   def create
     render json: strong_resource
   end
+end
+
+class CompaniesController < ActionController::Base
+  include StrongResources::Controller::Mixin
+  strong_resource :unicorn
 end
