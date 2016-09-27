@@ -15,7 +15,7 @@ module StrongResources
         end
 
         def type
-          params.try(:[], :data).try(:[], :type).try(:to_sym)
+          params.try(:[], :data).try(:[], :type).try(:to_sym).try(:to_s)
         end
       end
 
@@ -25,7 +25,6 @@ module StrongResources
       end
 
       def strong_resource
-
         _params_type = JSONParams.new(self).type
         resource = self.class._strong_resources[_params_type][action_name.to_sym]
         _params = params
@@ -51,7 +50,7 @@ module StrongResources
             resources[action_name] = resource
           end
 
-          self._strong_resources[type.to_sym] = resources
+          self._strong_resources[type.to_s.pluralize] = resources
         end
       end
     end

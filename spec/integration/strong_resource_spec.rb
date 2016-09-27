@@ -9,7 +9,7 @@ describe 'strong_resources' do
   end
 
   let(:params) do
-    { person: { name: 'John' }, data: { type: 'person' }  }
+    { person: { name: 'John' }, data: { type: 'people' }  }
   end
 
   describe 'basic POST', type: :request do
@@ -163,7 +163,7 @@ describe "strong_resources" do
 
     context "request payload strong_resource == 'parent_company'" do
       let(:params) do
-        { parent_company: { title: 'walmart' }, data: { type: 'parent_company' } }
+        { parent_company: { title: 'walmart' }, data: { type: 'parent_companies' } }
       end
 
       it 'core params are allowed' do
@@ -184,7 +184,7 @@ describe "strong_resources" do
 
     context "request payload strong_resource == 'company'" do
       let(:params) do
-        { company: { title: 'Jet.com' }, data: { type: 'company' } }
+        { company: { title: 'Jet.com' }, data: { type: 'companies' } }
       end
 
       it 'core params are allowed' do
@@ -211,7 +211,7 @@ describe "strong_resources" do
 
     context "when strong_resource defined without block" do
       let(:params) do
-        { unicorn: { title: 'Jet.com' }, data: { type: 'unicorn' } }
+        { unicorn: { title: 'Jet.com' }, data: { type: 'unicorns' } }
       end
 
       it 'core params are allowed' do
