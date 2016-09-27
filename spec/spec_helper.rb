@@ -93,9 +93,11 @@ class CompaniesController < ActionController::Base
     belongs_to :state
   end
 
-  strong_resource :unicorn
-
   def create
     render json: strong_resource
   end
+end
+
+class UnicornCompaniesController < CompaniesController
+  strong_resource :unicorn
 end

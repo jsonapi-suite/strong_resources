@@ -1,7 +1,6 @@
 module StrongResources
   module Controller
     module Mixin
-      extend ActiveSupport::Concern
       class JSONParams
         attr_reader :params
         def initialize(controller)
@@ -19,14 +18,31 @@ module StrongResources
         end
       end
 
-      included do
-        class_attribute :_strong_resources, instance_writer: false
-        self._strong_resources = {}
+      def self.included(klass)
+        klass.class_eval do
+          extend ClassMethods
+
+          class << self
+            attr_accessor :_strong_resources
+            def inherited(subclass)
+              subclass._strong_resources = self._strong_resources.deep_dup 
+
+              super
+            end
+           end
+
+          klass._strong_resources = {}
+        end
       end
 
       def strong_resource
         _params_type = JSONParams.new(self).type
-        resource = self.class._strong_resources[_params_type][action_name.to_sym]
+        unless resource_for_type = self.class._strong_resources[_params_type]
+          raise ::StrongResources::UnregisteredResource.new(_params_type)
+        end
+
+        resource = resource_for_type[action_name.to_sym]
+
         _params = params
         _params = _params.require(resource.require) if resource.require
         _params.permit(resource.permits(self))
@@ -35,6 +51,7 @@ module StrongResources
       def update_action?
         action_name == 'update'
       end
+
 
       module ClassMethods
         def strong_resource(name, opts = {}, &blk)

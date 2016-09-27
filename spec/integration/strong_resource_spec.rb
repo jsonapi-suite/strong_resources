@@ -153,7 +153,7 @@ end
 
 
 describe "strong_resources" do
-  context "with multiple definitions" do
+  context "on base class" do
     let(:controller) do
       controller = CompaniesController.new
       controller.params = ActionController::Parameters.new(params)
@@ -206,6 +206,38 @@ describe "strong_resources" do
           },'state_attributes' => {
               'acronym' => 'ar'
           })
+      end
+    end
+
+      context "jsontype of subclasses" do
+        let(:params) do
+          { unicorn: { title: 'Jet.com' }, data: { type: 'unicorns' } }
+        end
+
+        it 'should raise exception' do
+          expect {
+            controller.strong_resource.to_h
+          }.to raise_error StrongResources::UnregisteredResource
+        end
+      end
+  end
+
+  context "in subclasses" do
+    let(:controller) do
+      controller = UnicornCompaniesController.new
+      controller.params = ActionController::Parameters.new(params)
+      allow(controller).to receive(:action_name) { :create }
+      controller
+    end
+
+    context "jsontype is defined in parent" do
+      let(:params) do
+        { parent_company: { title: 'walmart' }, data: { type: 'parent_companies' } }
+      end
+
+      it 'should be able to parse' do
+        params[:parent_company][:foo] = 'bar'
+        expect(controller.strong_resource.to_h).to eq('title' => 'walmart')
       end
     end
 
