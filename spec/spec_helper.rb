@@ -51,24 +51,15 @@ StrongResources.configure do
     attribute :revenue, :integer
   end
 
+  strong_resource :parent_company do
+    attribute :title, :string
+  end
+
+  strong_resource :unicorn do
+    attribute :title, :string
+  end
+
   strong_resource :state do
     attribute :acronym, :string
-  end
-end
-
-class PeopleController < ActionController::Base
-  include StrongResources::Controller::Mixin
-
-  strong_resource :person do
-    has_many :pets, only: [:kind], destroy: true
-    has_many :siblings, resource: :person, delete: true
-
-    belongs_to :company, except: [:revenue] do
-      belongs_to :state
-    end
-  end
-
-  def create
-    render json: strong_resource
   end
 end
