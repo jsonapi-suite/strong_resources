@@ -4,11 +4,11 @@ module StrongResources
       class JSONParams
         attr_reader :params
         def initialize(controller)
-        params_method = if controller.respond_to?(:raw_params) 
-                          :raw_params 
-                        else
-                          :params
-                        end
+          params_method = if controller.respond_to?(:raw_params) 
+                            :raw_params 
+                          else
+                            :params
+                          end
 
           @params = controller.send(params_method)
         end
@@ -25,7 +25,7 @@ module StrongResources
           class << self
             attr_accessor :_strong_resources
             def inherited(subclass)
-              subclass._strong_resources = self._strong_resources.deep_dup 
+              subclass._strong_resources = self._strong_resources.deep_dup
 
               super
             end
@@ -58,7 +58,6 @@ module StrongResources
           blk ||= Proc.new {}
           opts[:require] ||= name unless opts[:require] == false
           resource = StrongResource.from(name, opts, &blk)
-          type = opts[:type] || name
 
           resources = { create: resource, update: resource }
           resource.customized_actions.each_pair do |action_name, prc|
@@ -67,7 +66,7 @@ module StrongResources
             resources[action_name] = resource
           end
 
-          self._strong_resources[type.to_s.pluralize] = resources
+          self._strong_resources[resource.jsonapi_type] = resources
         end
       end
     end
