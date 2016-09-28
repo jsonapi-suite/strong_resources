@@ -4,8 +4,8 @@ module StrongResources
       class JSONParams
         attr_reader :params
         def initialize(controller)
-          params_method = if controller.respond_to?(:raw_params) 
-                            :raw_params 
+          params_method = if controller.respond_to?(:raw_params)
+                            :raw_params
                           else
                             :params
                           end
@@ -18,20 +18,15 @@ module StrongResources
         end
       end
 
-      def self.included(klass)
-        klass.class_eval do
-          extend ClassMethods
+      extend ActiveSupport::Concern
 
-          class << self
-            attr_accessor :_strong_resources
-            def inherited(subclass)
-              subclass._strong_resources = self._strong_resources.deep_dup
+      included do
+        class_attribute :_strong_resources
+        self._strong_resources = {}
 
-              super
-            end
-           end
-
-          klass._strong_resources = {}
+        def self.inherited(klass)
+          super
+          klass._strong_resources = self._strong_resources.deep_dup
         end
       end
 
