@@ -1,20 +1,11 @@
 module StrongResources
   module Controller
     module Mixin
-      class JSONParams
-        attr_reader :params
-        def initialize(controller)
-          params_method = if controller.respond_to?(:raw_params)
-                            :raw_params
-                          else
-                            :params
-                          end
-
-          @params = controller.send(params_method)
-        end
-
-        def type
-          params.try(:[], :data).try(:[], :type).try(:to_sym).try(:to_s)
+      class JsonApiType
+        def self.for(controller)
+          _params = controller.params
+          _params = controller.raw_params if controller.respond_to?(:raw_params)
+          _params.try(:[], :data).try(:[], :type).try(:to_sym).try(:to_s)
         end
       end
 
@@ -23,17 +14,12 @@ module StrongResources
       included do
         class_attribute :_strong_resources
         self._strong_resources = {}
-
-        def self.inherited(klass)
-          super
-          klass._strong_resources = self._strong_resources.deep_dup
-        end
       end
 
       def strong_resource
-        _params_type = JSONParams.new(self).type
-        unless resource_for_type = self.class._strong_resources[_params_type]
-          raise ::StrongResources::UnregisteredResource.new(_params_type)
+        type = JsonApiType.for(self)
+        unless resource_for_type = self.class._strong_resources[type]
+          raise ::StrongResources::UnregisteredResource.new(type)
         end
 
         resource = resource_for_type[action_name.to_sym]
@@ -47,8 +33,12 @@ module StrongResources
         action_name == 'update'
       end
 
-
       module ClassMethods
+        def inherited(klass)
+          super
+          klass._strong_resources = self._strong_resources.deep_dup
+        end
+
         def strong_resource(name, opts = {}, &blk)
           blk ||= Proc.new {}
           opts[:require] ||= name unless opts[:require] == false
