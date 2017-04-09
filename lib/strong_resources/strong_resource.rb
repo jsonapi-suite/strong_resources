@@ -1,16 +1,17 @@
 module StrongResources
   class StrongResource
-    attr_accessor :attributes, :relations, :require, :relation_type,
+    attr_accessor :attributes,
+      :relations,
+      :relation_type,
       :only,
       :except,
-      :delete,
+      :disassociate,
       :destroy
     attr_reader :name, :customized_actions, :jsonapi_type
 
     def self.from(name, opts = {}, &blk)
       config   = StrongResources.config.strong_resources[name]
       resource = new(name)
-      resource.require = opts[:require]
       resource.instance_eval(&config[:base])
       resource.instance_eval(&blk) if blk
       resource
@@ -32,8 +33,8 @@ module StrongResources
       end
     end
 
-    def delete?
-      !!@delete
+    def disassociate?
+      !!@disassociate
     end
 
     def destroy?
@@ -60,26 +61,26 @@ module StrongResources
                  resource: nil,
                  only: nil,
                  except: nil,
-                 delete: false,
+                 disassociate: false,
                  destroy: false,
                  &blk)
       resource_name = resource || name.to_s.singularize.to_sym
       related_resource = self.class.from(resource_name)
       related_resource.instance_eval(&blk) if block_given?
       related_resource.relation_type = :has_many
-      add_relation(name, related_resource, only, except, delete, destroy)
+      add_relation(name, related_resource, only, except, disassociate, destroy)
     end
 
     def belongs_to(name,
                    resource: nil,
                    only: nil,
                    except: nil,
-                   delete: false,
+                   disassociate: false,
                    destroy: false,
                    &blk)
       resource_name = resource || name
       related_resource = self.class.from(resource_name, &blk)
-      add_relation(name, related_resource, only, except, delete, destroy)
+      add_relation(name, related_resource, only, except, disassociate, destroy)
     end
 
     def has_one(*args, &blk)
@@ -92,7 +93,9 @@ module StrongResources
           related_resource = opts[:resource]
           related = related_permits(related_resource, controller)
 
-          permits.merge!(:"#{relation_name}_attributes" => related)
+          permits[:relationships] ||= {}
+          permits[:relationships][relation_name] = related
+          permits
         end
       end
     end
@@ -101,6 +104,7 @@ module StrongResources
 
     def base_permits(resource, controller)
       permits = {}
+      permits.merge!(id: StrongResources.type_for_param(:id))
       resource.attributes.each_pair do |name, opts|
         next if (opts[:if] and opts[:if].call(controller) == false)
         permits.merge!(name => StrongResources.type_for_param(opts[:type]))
@@ -114,27 +118,24 @@ module StrongResources
     def related_permits(related_resource, controller)
       related_resource.permits(controller).tap do |permits|
         permits.merge!(id: StrongResources.type_for_param(:id))
-
-        if controller.update_action?
-          merge_delete_destroy(related_resource, permits)
-        end
+        merge_disassociate_destroy(related_resource, permits)
       end
     end
 
-    def merge_delete_destroy(related_resource, permits)
-      if related_resource.delete?
-        permits.merge!(_delete: StrongResources.type_for_param(:boolean))
+    def merge_disassociate_destroy(related_resource, permits)
+      if related_resource.disassociate?
+        permits.merge!(_disassociate: true)
       end
 
       if related_resource.destroy?
-        permits.merge!(_destroy: StrongResources.type_for_param(:boolean))
+        permits.merge!(_destroy: true)
       end
     end
 
-    def add_relation(name, resource, only, except, delete, destroy)
+    def add_relation(name, resource, only, except, disassociate, destroy)
       resource.only = only
       resource.except = except
-      resource.delete = delete
+      resource.disassociate = disassociate
       resource.destroy = destroy
 
       self.relations[name] = {

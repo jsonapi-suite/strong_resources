@@ -61,7 +61,7 @@ class PeopleController < ActionController::Base
 
   strong_resource :person do
     has_many :pets, only: [:kind], destroy: true
-    has_many :siblings, resource: :person, delete: true
+    has_many :siblings, resource: :person, disassociate: true
 
     belongs_to :company, except: [:revenue] do
       belongs_to :state

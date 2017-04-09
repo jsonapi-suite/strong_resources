@@ -10,20 +10,52 @@ module StrongResources
         end
       end
 
+      # TODO: refactor
+      def apply_strong_params
+        deserializer = deserialized_params
+
+        unless deserializer.attributes.respond_to?(:permit)
+          deserializer.attributes = ActionController::Parameters.new(deserializer.attributes)
+        end
+        deserializer.attributes = deserializer.attributes.permit(strong_resource)
+
+        deserializer.relationships.each_pair do |name, relationship_payload|
+          [relationship_payload].flatten.each do |rp|
+            apply_strong_param(rp, strong_resource[:relationships][name])
+          end
+        end
+      end
+
+      # TODO: refactor
+      def apply_strong_param(relationship_payload, permitted)
+        if relationship_payload[:meta][:method] == :disassociate
+          raise 'not allowed disass' unless permitted[:_disassociate]
+        end
+
+        if relationship_payload[:meta][:method] == :destroy
+          raise 'not allowed destroy' unless permitted[:_destroy]
+        end
+
+        unless relationship_payload[:attributes].respond_to?(:permit)
+          relationship_payload[:attributes] = ActionController::Parameters.new(relationship_payload[:attributes])
+        end
+
+        relationship_payload[:attributes] = relationship_payload[:attributes].permit(permitted)
+        relationship_payload[:relationships].each_pair do |name, rp|
+          [rp].flatten.each do |_rp|
+            apply_strong_param(_rp, permitted[:relationships][name])
+          end
+        end
+      end
+
       def strong_resource
         resource = self.class._strong_resources[action_name.to_sym]
         _params = params
-        _params = _params.require(resource.require) if resource.require
-        _params.permit(resource.permits(self))
-      end
-
-      def update_action?
-        action_name == 'update'
+        resource.permits(self)
       end
 
       module ClassMethods
         def strong_resource(name, opts = {}, &blk)
-          opts[:require] ||= name unless opts[:require] == false
           resource = StrongResource.from(name, opts, &blk)
 
           resources = { create: resource, update: resource }

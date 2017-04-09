@@ -51,27 +51,27 @@ describe 'strong_resources' do
         context 'when :destroy is true' do
           before do
             params[:person][:pets_attributes][0][:_destroy] = true
-            params[:person][:pets_attributes][0][:_delete] = true
+            params[:person][:pets_attributes][0][:_disassociate] = true
             allow(controller).to receive(:update_action?) { true }
           end
 
           it 'adds _destroy param' do
             pets_attrs = controller.strong_resource.to_h['pets_attributes'][0]
             expect(pets_attrs['_destroy']).to eq(true)
-            expect(pets_attrs).to_not have_key('_delete')
+            expect(pets_attrs).to_not have_key('_disassociate')
           end
         end
 
-        context 'when :delete is true' do
+        context 'when :disassociate is true' do
           before do
             params[:person].delete(:pets_attributes)
-            params[:person][:siblings_attributes] = [{ id: '1', _delete: true, _destroy: true }]
+            params[:person][:siblings_attributes] = [{ id: '1', _disassociate: true, _destroy: true }]
             allow(controller).to receive(:update_action?) { true }
           end
 
-          it 'adds _delete param' do
+          it 'adds _disassociate param' do
             siblings_attrs = controller.strong_resource.to_h['siblings_attributes'][0]
-            expect(siblings_attrs['_delete']).to eq(true)
+            expect(siblings_attrs['_disassociate']).to eq(true)
             expect(siblings_attrs).to_not have_key('_destroy')
           end
         end
