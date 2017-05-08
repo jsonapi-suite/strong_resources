@@ -1,13 +1,8 @@
 $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 
-require 'rails'
+require 'jsonapi_compliable'
+require 'action_pack'
 require 'action_controller'
-
-class FakeApplication < Rails::Application; end
-
-Rails.application = FakeApplication
-Rails.configuration.action_controller = ActiveSupport::OrderedOptions.new
-Rails.configuration.secret_key_base = 'secret_key_base'
 
 module ActionController
   SharedTestRoutes = ActionDispatch::Routing::RouteSet.new
@@ -20,15 +15,15 @@ module ActionController
     include SharedTestRoutes.url_helpers
   end
 
-  class ActionController::TestCase
-    setup do
-      @routes = SharedTestRoutes
-    end
-  end
+  #class ActionController::TestCase
+    #setup do
+      #@routes = SharedTestRoutes
+    #end
+  #end
 end
 
 require 'strong_resources'
-require 'rspec/rails'
+require 'rspec'
 require 'pry'
 require 'pry-byebug'
 
@@ -58,6 +53,7 @@ end
 
 class PeopleController < ActionController::Base
   include StrongResources::Controller::Mixin
+  include JsonapiCompliable::Base
 
   strong_resource :person do
     has_many :pets, only: [:kind], destroy: true

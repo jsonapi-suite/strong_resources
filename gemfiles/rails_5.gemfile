@@ -2,7 +2,8 @@
 
 source "https://rubygems.org"
 
-gem "rails", "~> 5.0"
+gem "actionpack", "~> 5.0"
+gem "activesupport", "~> 5.0"
 
 group :test do
   gem "appraisal"

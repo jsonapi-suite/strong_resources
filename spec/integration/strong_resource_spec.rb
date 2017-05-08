@@ -5,146 +5,197 @@ describe 'strong_resources' do
     controller = PeopleController.new
     controller.params = ActionController::Parameters.new(params)
     allow(controller).to receive(:action_name) { :create }
+    allow(controller).to receive(:params) { ActionController::Parameters.new(params) }
+    allow(controller).to receive(:request) do
+      double(env: { 'METHOD' => 'POST' })
+    end
     controller
   end
 
   let(:params) do
-    { person: { name: 'John' } }
+    {
+      data: {
+        id: '1',
+        attributes: { name: 'John' }
+      }
+    }
   end
 
   describe 'basic POST', type: :request do
+    it 'whitelists relevant params' do
+      expect(!!controller.deserialized_params.attributes.permitted?)
+        .to be(false)
+
+      controller.apply_strong_params
+
+      expect(!!controller.deserialized_params.attributes.permitted?)
+        .to be(true)
+    end
+
     context 'with bad param name' do
       before do
-        params[:person][:foo] = 'bar'
+        params[:data][:attributes][:foo] = 'bar'
       end
 
       it 'only allows correct param names' do
-        expect(controller.strong_resource.to_h).to eq('name' => 'John')
+        expect(controller.deserialized_params.attributes.keys)
+          .to match_array(%w(name foo id))
+        controller.apply_strong_params
+        expect(controller.deserialized_params.attributes.keys)
+          .to match_array(%w(name id))
       end
     end
 
     context 'with bad param value' do
       before do
-        params[:person][:name] = 1
+        params[:data][:attributes][:name] = 1
       end
 
       it 'disallows incorrect values' do
         expect {
-          expect(controller.strong_resource.to_h)
+          controller.apply_strong_params
         }.to raise_error(StrongerParameters::InvalidParameter)
       end
     end
 
     context 'with relation' do
       before do
-        params[:person][:pets_attributes] = [
-          { kind: 'Dog' }
+        params[:data][:relationships] = {
+          pets: {
+            data: [
+              { id: '1', type: 'pets' }
+            ]
+          },
+          foo: {
+            data: {
+              type: 'foos', id: '1'
+            }
+          }
+        }
+
+        params[:included] = [
+          {
+            type: 'pets',
+            id: '1',
+            attributes: { kind: 'Dog' }
+          },
+          {
+            type: 'foos',
+            id: '1',
+            attributes: { scrub: 'me' }
+          }
         ]
       end
 
       it 'allows whitelisted relations' do
-        expect(controller.strong_resource.to_h)
-          .to eq('name' => 'John', 'pets_attributes' => [{ 'kind' => 'Dog' }])
-      end
-
-      context 'when an update action' do
-        context 'when :destroy is true' do
-          before do
-            params[:person][:pets_attributes][0][:_destroy] = true
-            params[:person][:pets_attributes][0][:_disassociate] = true
-            allow(controller).to receive(:update_action?) { true }
-          end
-
-          it 'adds _destroy param' do
-            pets_attrs = controller.strong_resource.to_h['pets_attributes'][0]
-            expect(pets_attrs['_destroy']).to eq(true)
-            expect(pets_attrs).to_not have_key('_disassociate')
-          end
-        end
-
-        context 'when :disassociate is true' do
-          before do
-            params[:person].delete(:pets_attributes)
-            params[:person][:siblings_attributes] = [{ id: '1', _disassociate: true, _destroy: true }]
-            allow(controller).to receive(:update_action?) { true }
-          end
-
-          it 'adds _disassociate param' do
-            siblings_attrs = controller.strong_resource.to_h['siblings_attributes'][0]
-            expect(siblings_attrs['_disassociate']).to eq(true)
-            expect(siblings_attrs).to_not have_key('_destroy')
-          end
-        end
+        controller.apply_strong_params
+        relationships = controller.deserialized_params.relationships
+        expect(relationships.keys).to match_array([:pets, :foo])
+        expect(relationships[:pets][0][:attributes].to_h)
+          .to eq({ 'id' => '1', 'kind' => 'Dog' })
+        expect(relationships[:foo][:attributes].to_h)
+          .to eq({})
       end
 
       context 'when passed wrong type' do
         before do
-          params[:person][:pets_attributes][0][:kind] = 'Ferret'
+          params[:included][0][:attributes][:kind] = 'Ferret'
         end
 
         it 'raises stronger_parameters error' do
           expect {
-            controller.strong_resource.to_h
+            controller.apply_strong_params
           }.to raise_error(StrongerParameters::InvalidParameter)
         end
       end
 
       context 'when limited by :only' do
         before do
-          params[:person][:pets_attributes][0][:name] = 'Lassie'
+          params[:data][:attributes][:name] = 'Lassie'
         end
 
         it 'drops attributes unless whitelisted by :only' do
-          expect(controller.strong_resource.to_h)
-            .to eq('name' => 'John', 'pets_attributes' => [{ 'kind' => 'Dog' }])
+          controller.apply_strong_params
+          pet = controller.deserialized_params.relationships[:pets][0]
+          expect(pet[:attributes]).to_not have_key(:name)
+          expect(pet[:attributes]).to_not have_key('name')
         end
       end
 
       context 'when limited by :except' do
         before do
-          params[:person].delete(:pets_attributes)
-          params[:person][:company_attributes] = { title: 'walmart', revenue: 10 }
+          params[:data][:relationships][:company] = {
+            data: { id: '1', type: 'companies' }
+          }
+          params[:included] << {
+            type: 'companies', id: '1', attributes: { title: 'walmart', revenue: 10 }
+          }
         end
 
         it 'drops attributes blacklisted by :except' do
-          expect(controller.strong_resource.to_h)
-            .to eq('name' => 'John', 'company_attributes' => { 'title' => 'walmart' })
+          controller.apply_strong_params
+          company = controller.deserialized_params.relationships[:company]
+          expect(company[:attributes].to_h).to eq({
+            'id' => '1',
+            'title' => 'walmart'
+          })
         end
       end
 
       context 'that goes by alternate name' do
         before do
-          params[:person].delete(:pets_attributes)
-          params[:person][:siblings_attributes] = [
-            { name: 'Jane' }
-          ]
+          params[:data][:relationships][:siblings] = {
+            data: [
+              { id: '1', type: 'people' }
+            ]
+          }
+
+          params[:included] << {
+            id: '1',
+            type: 'people',
+            attributes: { name: 'Jane' }
+          }
         end
 
         it 'allows name and matches with correct resource' do
-          expect(controller.strong_resource.to_h)
-            .to eq('name' => 'John', 'siblings_attributes' => [{ 'name' => 'Jane' }])
+          controller.apply_strong_params
+          sibling = controller.deserialized_params.relationships[:siblings][0]
+          expect(sibling[:attributes].to_h).to eq({ 'id' => '1', 'name' => 'Jane' })
         end
       end
 
       context 'that is nested' do
         before do
-          params[:person].delete(:pets_attributes)
-          params[:person][:company_attributes] = {
-            title: 'walmart',
-            state_attributes: {
-              acronym: 'ny'
+          params[:data][:relationships][:company] = {
+            data: { id: '1', type: 'companies' }
+          }
+          params[:included] << {
+            id: '1',
+            type: 'companies',
+            attributes: { title: 'walmart' },
+            relationships: {
+              state: {
+                data: {
+                  id: '1', type: 'states'
+                }
+              }
             }
+          }
+          params[:included] << {
+            type: 'states',
+            id: '1',
+            attributes: { acronym: 'ny' }
           }
         end
 
         it 'allows nesting relations' do
-          expect(controller.strong_resource.to_h)
-            .to eq('name' => 'John', 'company_attributes' => {
-              'title' => 'walmart',
-              'state_attributes' => {
-                'acronym' => 'ny'
-              }
-            })
+          controller.apply_strong_params
+          company = controller.deserialized_params.relationships[:company]
+          state = company[:relationships][:state]
+          expect(state[:attributes].to_h).to eq({
+            'id' => '1',
+            'acronym' => 'ny'
+          })
         end
       end
     end
