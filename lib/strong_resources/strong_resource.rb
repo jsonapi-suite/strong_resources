@@ -49,6 +49,10 @@ module StrongResources
       self.attributes.delete(name)
     end
 
+    def remove_relationship(name)
+      self.relations.delete(name)
+    end
+
     def on(action_name, &blk)
       self.customized_actions[action_name] = blk
     end

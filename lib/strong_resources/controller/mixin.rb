@@ -20,8 +20,12 @@ module StrongResources
         deserializer.attributes = deserializer.attributes.permit(strong_resource)
 
         deserializer.relationships.each_pair do |name, relationship_payload|
-          [relationship_payload].flatten.each do |rp|
-            apply_strong_param(rp, strong_resource[:relationships][name])
+          if strong_resource[:relationships].has_key?(name)
+            [relationship_payload].flatten.each do |rp|
+              apply_strong_param(rp, strong_resource[:relationships][name])
+            end
+          else
+            deserializer.relationships.delete(name)
           end
         end
       end

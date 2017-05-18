@@ -32,6 +32,48 @@ describe 'strong_resources' do
         .to be(true)
     end
 
+    context 'when attribute is removed for the given action' do
+      before do
+        allow(controller).to receive(:action_name) { :update }
+        allow(controller).to receive(:request) do
+          double(env: { 'METHOD' => 'PUT' })
+        end
+      end
+
+      it 'does not whitelist the attribute' do
+        expect(controller.deserialized_params.attributes.keys)
+          .to match_array(%w(name id))
+        controller.apply_strong_params
+        expect(controller.deserialized_params.attributes.keys)
+          .to match_array(%w(id))
+      end
+    end
+
+    context 'when relationship is removed for the given action' do
+      before do
+        allow(controller).to receive(:action_name) { :update }
+        allow(controller).to receive(:request) do
+          double(env: { 'METHOD' => 'PUT' })
+        end
+
+        params[:data][:relationships] = {
+          company: {
+            data: {
+              id: '1', type: 'companies'
+            }
+          }
+        }
+      end
+
+      it 'does not whitelist the relationship' do
+        expect(controller.deserialized_params.relationships.keys)
+          .to match_array([:company])
+        controller.apply_strong_params
+        expect(controller.deserialized_params.relationships.keys)
+          .to match_array([])
+      end
+    end
+
     context 'with bad param name' do
       before do
         params[:data][:attributes][:foo] = 'bar'
@@ -90,11 +132,10 @@ describe 'strong_resources' do
       it 'allows whitelisted relations' do
         controller.apply_strong_params
         relationships = controller.deserialized_params.relationships
-        expect(relationships.keys).to match_array([:pets, :foo])
+        expect(relationships.keys).to match_array([:pets])
+        expect(relationships).to_not have_key(:foo)
         expect(relationships[:pets][0][:attributes].to_h)
           .to eq({ 'id' => '1', 'kind' => 'Dog' })
-        expect(relationships[:foo][:attributes].to_h)
-          .to eq({})
       end
 
       context 'when passed wrong type' do

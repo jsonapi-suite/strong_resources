@@ -14,12 +14,6 @@ module ActionController
     include ActionController::Testing
     include SharedTestRoutes.url_helpers
   end
-
-  #class ActionController::TestCase
-    #setup do
-      #@routes = SharedTestRoutes
-    #end
-  #end
 end
 
 require 'strong_resources'
@@ -61,6 +55,11 @@ class PeopleController < ActionController::Base
 
     belongs_to :company, except: [:revenue] do
       belongs_to :state
+    end
+
+    on :update do
+      remove_attribute :name
+      remove_relationship :company
     end
   end
 
