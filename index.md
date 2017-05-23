@@ -62,6 +62,20 @@ class PeopleController < ApplicationController
 end
 ```
 
+You can do the same for relationships. Let's say the person's `Account` can be created, but not updated from this endpoint:
+
+```ruby
+class PeopleController < ApplicationController
+  strong_resource :person do
+    belongs_to :account
+
+    on :update do
+      remove_relationship :account
+    end
+  end
+end
+```
+
 ### Limit attribute set
 
 You can use `only` and `except` to limit the accepted payloads:
