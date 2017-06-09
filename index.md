@@ -30,7 +30,7 @@ These resources can now be references from your controller:
 ```ruby
 class PeopleController < ApplicationController
   strong_resource :person do
-    has_many :pets, delete: true, destroy: true
+    has_many :pets, disassociate: true, destroy: true
   end
 
   def create
@@ -44,7 +44,7 @@ We've now enabled
 
 * Strong params with type checking
 * Support for nested associations
-* Support for `_delete` and `_destroy` on `update` action
+* Support for `disassociate` and `destroy` on `update` action
 
 Most importantly, this data can now be introspected for things like automatic documentation.
 
@@ -92,7 +92,7 @@ No error will be raised when excess parameters are supplied; they are silently d
 
 ### Delete/Destroy
 
-We follow the pattern where the `_delete` parameter is for disassociation, the `_destroy` parameter is for deleting the associated resource as well as disassociating. Use `delete` and `destroy`:
+We follow the pattern where the `disassociate` parameter is for disassociation, the `destroy` parameter is for deleting the associated resource as well as disassociating. Use `disassociate` and `destroy`:
 
 ```ruby
 class PeopleController < ApplicationController
