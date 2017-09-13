@@ -10,7 +10,7 @@ module StrongResources
     attr_reader :name, :customized_actions, :jsonapi_type
 
     def self.from(name, opts = {}, &blk)
-      config   = StrongResources.config.strong_resources[name]
+      config   = StrongResources.find(name)
       resource = new(name)
       resource.instance_eval(&config[:base])
       resource.instance_eval(&blk) if blk
