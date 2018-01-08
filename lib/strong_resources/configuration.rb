@@ -24,6 +24,7 @@ module StrongResources
       strong_param :string, swagger: :string, type: ActionController::Parameters.string
       strong_param :integer, swagger: :integer, type: ActionController::Parameters.integer
       strong_param :boolean, swagger: :boolean, type: ActionController::Parameters.boolean
+      strong_param :number, swagger: :number, type: ActionController::Parameters.decimal
     end
   end
 end
