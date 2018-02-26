@@ -43,6 +43,10 @@ StrongResources.configure do
   strong_resource :state do
     attribute :acronym, :string
   end
+
+  strong_resource :color do
+    attribute :name, :string
+  end
 end
 
 class PeopleController < ActionController::Base
@@ -62,6 +66,17 @@ class PeopleController < ActionController::Base
       remove_relationship :company
     end
   end
+
+  def create
+    render json: strong_resource
+  end
+end
+
+class ColorsController < ActionController::Base
+  include StrongResources::Controller::Mixin
+  include JsonapiCompliable::Base
+
+  strong_resource :color
 
   def create
     render json: strong_resource
