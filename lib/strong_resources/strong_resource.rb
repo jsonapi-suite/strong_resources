@@ -93,11 +93,11 @@ module StrongResources
 
     def permits(controller)
       base_permits(self, controller).tap do |permits|
+        permits[:relationships] ||= {}
         self.relations.each_pair do |relation_name, opts|
           related_resource = opts[:resource]
           related = related_permits(related_resource, controller)
-
-          permits[:relationships] ||= {}
+          
           permits[:relationships][relation_name] = related
           permits
         end

@@ -1,16 +1,19 @@
 require 'spec_helper'
 
 describe 'strong_resources' do
-  let(:controller) do
-    controller = PeopleController.new
-    controller.params = ActionController::Parameters.new(params)
-    allow(controller).to receive(:action_name) { :create }
-    allow(controller).to receive(:params) { ActionController::Parameters.new(params) }
-    allow(controller).to receive(:request) do
-      double(env: { 'METHOD' => 'POST' })
-    end
-    controller
-  end
+  let(:make_controller) { -> (klass) {
+      controller = klass.new
+      controller.params = ActionController::Parameters.new(params)
+      allow(controller).to receive(:action_name) { :create }
+      allow(controller).to receive(:params) { ActionController::Parameters.new(params) }
+      allow(controller).to receive(:request) do
+        double(env: { 'METHOD' => 'POST' })
+      end
+      controller
+  }}
+  
+  let(:controller) { make_controller.call(PeopleController) }
+  let(:colors_controller) { make_controller.call(ColorsController) }
 
   let(:params) do
     {
@@ -136,6 +139,16 @@ describe 'strong_resources' do
         expect(relationships).to_not have_key(:foo)
         expect(relationships[:pets][0][:attributes].to_h)
           .to eq({ 'id' => '1', 'kind' => 'Dog' })
+      end
+
+      context 'when no relationships are defined on the strong resource' do
+        let(:no_relationship_controller) { colors_controller }
+        
+        it 'does not error, matching normal behavior for extra params' do
+          expect {
+            no_relationship_controller.apply_strong_params
+          }.to_not raise_error
+        end
       end
 
       context 'when passed wrong type' do
