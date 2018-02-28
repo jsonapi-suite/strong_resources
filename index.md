@@ -145,6 +145,16 @@ strong_resource :person do
 end
 ```
 
+### Default Types
+
+* `id`
+* `string`
+* `integer`
+* `boolean`
+* `number`
+
+If you have `datetime`, we currently suggest passing `string`. According to the [swagger specification](https://swagger.io/specification/#data-types-13) datetimes are actually a specially-formatted string. Would love to see a PR supporting those specially-formatted strings for an extra level of specificity.
+
 ### Custom Types
 
 Define a custom type by giving its internal name, stronger_parameters type, and swagger type:
