@@ -23,6 +23,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "actionpack", [">= 4.1", "< 6.0"]
   spec.add_dependency "activesupport", [">= 4.1", "< 6.0"]
 
+  spec.add_development_dependency "jsonapi_errorable", "~> 0.9.0"
   spec.add_development_dependency "bundler", "~> 1.11"
   spec.add_development_dependency "rake", "~> 10.0"
   spec.add_development_dependency "rspec", "~> 3.0"

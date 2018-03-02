@@ -6,6 +6,10 @@ require "strong_resources/configuration"
 require "strong_resources/strong_resource"
 require "strong_resources/controller/mixin"
 
+if defined?(JsonapiErrorable)
+  require "strong_resources/exception_handler"
+end
+
 module StrongResources
   class UnregisteredResource < StandardError
     def initialize(name)

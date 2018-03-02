@@ -8,6 +8,16 @@ module StrongResources
             attr_accessor :_strong_resources
           end
         end
+
+        # In cases when the full jsonapi suite is being used, we
+        # can provide much better error feedback when parameters are
+        # incorrect.  Without this handler, errors would be generic
+        # 500's with unhelpful statuses, but this will give API consumers
+        # better feedback about formatting errors with a 400 response.
+        if respond_to?(:register_exception)
+          register_exception StrongerParameters::InvalidParameter,
+            handler: StrongResources::ExceptionHandler
+        end
       end
 
       # TODO: refactor
