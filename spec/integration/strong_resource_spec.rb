@@ -35,6 +35,28 @@ describe 'strong_resources' do
         .to be(true)
     end
 
+    context 'when unknown type is referenced' do
+      def with_type(val)
+        begin
+          action = controller.class._strong_resources[:create]
+          name = action.attributes[:name]
+          original = name[:type]
+          name[:type] = val
+          yield
+        ensure
+          name[:type] = original
+        end
+      end
+
+      it 'raises helpful error' do
+        with_type(:foo) do
+          expect {
+            controller.apply_strong_params
+          }.to raise_error(StrongResources::UnregisteredType)
+        end
+      end
+    end
+
     context 'when attribute is removed for the given action' do
       before do
         allow(controller).to receive(:action_name) { :update }

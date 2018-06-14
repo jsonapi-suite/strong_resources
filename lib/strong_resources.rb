@@ -21,13 +21,20 @@ module StrongResources
     end
   end
 
-  class UnregisteredParam < StandardError
-    def initialize(name)
-      @name = name
+  class UnregisteredType < StandardError
+    def initialize(type)
+      @type = type
     end
 
     def message
-      "Parameter with name #{@name} not registered"
+      <<-MSG
+Type "#{@type}" was not found!
+
+This is the right-hand side of your strong_resource attributes.
+
+See the list of default types, and directions on how to register custom
+types, here: https://jsonapi-suite.github.io/strong_resources/#default-types
+      MSG
     end
   end
 
@@ -46,8 +53,8 @@ module StrongResources
   end
 
   def self.type_for_param(name)
-    found = config.strong_params[name][:type]
-    raise UnregisteredParam.new(name) unless found
-    found
+    found = config.strong_params[name]
+    raise UnregisteredType.new(name) unless found
+    found[:type]
   end
 end
