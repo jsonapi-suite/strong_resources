@@ -54,9 +54,9 @@ module StrongResources
 
       def strong_resource
         resources = self.class._strong_resources
-        raise RuntimeError, "You need to define the `strong_resource` for #{class.name}" if resources.nil?
+        raise RuntimeError, "You need to define the `strong_resource` for #{self.class.name}" if resources.nil?
         resource = resources[action_name.to_sym]
-        raise RuntimeError, "Missing `strong_resource` parameters for #{class.name}##{action_name}" if resource.nil?
+        raise RuntimeError, "Missing `strong_resource` parameters for #{self.class.name}##{action_name}" if resource.nil?
         _params = params
         resource.permits(self)
       end
