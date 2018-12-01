@@ -6,9 +6,8 @@ require "strong_resources/configuration"
 require "strong_resources/strong_resource"
 require "strong_resources/controller/mixin"
 
-if defined?(JsonapiErrorable)
-  require "strong_resources/exception_handler"
-end
+require "strong_resources/exception_handler" if defined?(JsonapiErrorable)
+require "strong_resources/railtie" if defined?(Rails)
 
 module StrongResources
   class UnregisteredResource < StandardError
